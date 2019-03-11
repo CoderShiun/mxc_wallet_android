@@ -1,1 +1,0 @@
-# mxc_wallet_android
