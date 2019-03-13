@@ -19,19 +19,26 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+
 public class MainActivity extends AppCompatActivity {
 
     private ActionBarDrawerToggle mDrawerToggle;
 
     boolean logon = false;
     public static final int FUNC_LOGIN = 1;
-    private TextView mNameView;
+    private TextView mMsgView;
+    private Toolbar toolbar;
+    private String cusName;
+    private String cusEth;
+    private String balance;
+    private Etherscan etherscan;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (!logon){
+        if (!logon) {
             Intent intent = new Intent(this, LoginActivity.class);
 //            startActivities(new Intent[]{intent});
             startActivityForResult(intent, FUNC_LOGIN);
@@ -42,8 +49,8 @@ public class MainActivity extends AppCompatActivity {
 
         drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle("Toolbar");
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //toolbar.setTitle();
         setSupportActionBar(toolbar);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -57,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         drawerLayout.setDrawerListener(mDrawerToggle);
+        mMsgView = (TextView) findViewById(R.id.msg);
 
         navigationView.getHeaderView(0).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,8 +77,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()) {
-                    case R.id.menu_home:
-                        Toast.makeText(MainActivity.this, "Home is clicked!", Toast.LENGTH_SHORT).show();
+                    case R.id.menu_eth:
+                        try {
+                            etherscan = new Etherscan();
+                            //String a = new Etherscan().getETHBalance(cusEth);
+                            //balance = etherscan.getETHBalance(cusEth);
+                            mMsgView.setText(balance + " ETH");
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        break;
+                    case R.id.menu_mxc:
+
+                        break;
+                    case R.id.menu_tx_check:
+
+                        break;
+                    case R.id.menu_tx_check_hash:
+
+                        break;
+                    case R.id.menu_internaltx_check:
+
                         break;
                     case R.id.menu_settings:
                         Toast.makeText(MainActivity.this, "Settings is clicked!", Toast.LENGTH_SHORT).show();
@@ -107,15 +136,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FUNC_LOGIN){
-            if (resultCode == RESULT_OK){
+        if (requestCode == FUNC_LOGIN) {
+            if (resultCode == RESULT_OK) {
                 logon = true;
                 String name = data.getStringExtra("LOGIN_NAME");
                 String ethaddress = data.getStringExtra("LOGIN_ETH");
-                Log.d("User name is: ", name);
-                mNameView = (TextView) findViewById(R.id.name);
-                mNameView.setText(name);
-            }else {
+                cusName = name;
+                cusEth = ethaddress;
+                //Log.d("User name is: ", name);
+                toolbar.setTitle(name);
+            } else {
                 finish();
             }
         }

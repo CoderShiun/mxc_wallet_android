@@ -369,7 +369,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 //            AuthGrpc.AuthStub asyncStub = AuthGrpc.newStub(mChannel);
 //            AuthGrpc.AuthFutureStub futureStub = AuthGrpc.newFutureStub(mChannel);
 
-
             LoginRequest loginRequest = LoginRequest.newBuilder()
                     .setEmail(mEmail)
                     .setPassword(mPassword)
@@ -402,13 +401,13 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             //LoginReply loginReply;
             try {
                 LoginReply loginReply = blockingStub.login(loginRequest);
-
                 if (loginReply.getReply().equals("0")) {
-                    cusName = loginReply.getMessage();
+                    String[] reply = loginReply.getMessage().split(":");
+                    cusETHadd = reply[0];
+                    cusName = reply[1];
                     return true;
                 } else if (loginReply.getReply().equals("2")) {
-                    System.out.println("Equals 2 :" + loginReply.getReply());
-
+                    /*
                     DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -429,10 +428,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
                     builder.setMessage("You haven't registered, do you want to join MXC?").setPositiveButton("Yes", dialogClickListener)
                             .setNegativeButton("No", dialogClickListener).show();
-
+                    */
                     return false;
                 } else {
-                    System.out.println("Equals 1 :" + loginReply.getReply());
                     return false;
                 }
 
@@ -454,7 +452,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             }
 
             if (success) {
-                Toast.makeText(LoginActivity.this, "Welcome to join", Toast.LENGTH_LONG).show();
+                Toast.makeText(LoginActivity.this, "MXC - your best choice!", Toast.LENGTH_LONG).show();
                 //finish();
                 Intent intent = new Intent();//数据是使用Intent返回
                 intent.putExtra("LOGIN_NAME",cusName);//把返回数据存入Intent
