@@ -37,9 +37,10 @@ public class EthBalanceBean {
         super();
     }
 
+    /*
     @Override
     public String toString() {
         return "Balance [status=" + status + ", message=" + message + ", result=" + result + "]";
     }
-
+    */
 }

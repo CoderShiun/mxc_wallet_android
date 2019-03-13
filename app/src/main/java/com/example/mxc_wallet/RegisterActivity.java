@@ -67,6 +67,7 @@ public class RegisterActivity extends Activity implements LoaderCallbacks<Cursor
     private EditText mEthaddressView;
     private View mProgressView;
     private View mLoginFormView;
+    public static final int FUNC_CANCLE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,9 +98,18 @@ public class RegisterActivity extends Activity implements LoaderCallbacks<Cursor
                 attemptSignUp();
             }
         });
+        Button mSignUpCancleButton = (Button) findViewById(R.id.signup_cancle_button);
+        mSignUpCancleButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+//            startActivities(new Intent[]{intent});
+                startActivityForResult(intent, FUNC_CANCLE);
+            }
+        });
 
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
+        mLoginFormView = findViewById(R.id.signup_form);
+        mProgressView = findViewById(R.id.signup_progress);
     }
 
     private void populateAutoComplete() {
@@ -317,7 +327,8 @@ public class RegisterActivity extends Activity implements LoaderCallbacks<Cursor
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-            ManagedChannel mChannel = ManagedChannelBuilder.forAddress("10.0.2.2", 8089).usePlaintext(true).build();
+            //10.0.2.2
+            ManagedChannel mChannel = ManagedChannelBuilder.forAddress("45.76.94.136", 8089).usePlaintext(true).build();
             AuthGrpc.AuthBlockingStub blockingStub = AuthGrpc.newBlockingStub(mChannel);
             //blockingStub = RouteGuideGrpc.newBlockingStub(mChannel);
             //asyncStub = RouteGuideGrpc.newStub(mChannel);

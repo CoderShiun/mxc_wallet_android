@@ -1,14 +1,21 @@
 package com.example.mxc_wallet;
 
+import android.os.AsyncTask;
+
 import com.google.gson.Gson;
+
+import org.web3j.utils.Convert;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+
+import io.opencensus.internal.StringUtils;
 
 public class Etherscan {
     private final String API_KEY = "W8M6B92HBM7CUAQINJ8IMST29RY2ZVSQH4";
@@ -25,18 +32,22 @@ public class Etherscan {
         conn = getConn(conn);
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        String line;
-        String JS = new String();
+        String line = bufferedReader.readLine();
+
+        //String JS = new String();
+        /*
         while((line = bufferedReader.readLine()) != null ){
             JS = line;
         }
-
+        */
         gson = new Gson();
 
         //1
         //解析对象：第一个参数：待解析的字符串 第二个参数结果数据类型的Class对象
-        EthBalanceBean ethBalanceBeanJS = gson.fromJson(JS, EthBalanceBean.class);
-        String jsonJS = gson.toJson(ethBalanceBeanJS.result);
+        EthBalanceBean ethBalanceBeanJS = gson.fromJson(line, EthBalanceBean.class);
+
+        //String jsonJS = gson.toJson(ethBalanceBeanJS.result);
+        BigDecimal balance = Convert.fromWei(ethBalanceBeanJS.result, Convert.Unit.ETHER);
 
         //2、
         //解析数组要求使用Type
@@ -45,10 +56,10 @@ public class Etherscan {
         System.out.println(list);*/
 
         bufferedReader.close();
-        return jsonJS;
+        return balance.toString();
     }
 
-    public void getMXCBalance(String ethAddress) throws IOException{
+    public String getMXCBalance(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=" +
                 MXC_Address + "&address=" +
                 ethAddress + "&tag=latest&apikey=" + API_KEY;
@@ -57,21 +68,17 @@ public class Etherscan {
         conn = getConn(conn);
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        String line;
-        String JS = new String();
-        while((line = bufferedReader.readLine()) != null ){
-            JS = line;
-        }
+        String line = bufferedReader.readLine();
 
         gson = new Gson();
-        MXCBalanceBean mxcBalanceBean = gson.fromJson(JS, MXCBalanceBean.class);
-        String jsonJS = gson.toJson(mxcBalanceBean);
-        System.out.println(jsonJS);
+        MXCBalanceBean mxcBalanceBean = gson.fromJson(line, MXCBalanceBean.class);
+        BigDecimal balance = Convert.fromWei(mxcBalanceBean.result, Convert.Unit.ETHER);
 
         bufferedReader.close();
+        return balance.toString();
     }
 
-    public void getTxByAddress(String ethAddress) throws IOException{
+    public String getTxByAddress(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=txlist&address=" +
                 ethAddress + "&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=" + API_KEY;
 
@@ -87,14 +94,15 @@ public class Etherscan {
 
         gson = new Gson();
         TxByAddressBean txByAddressBean = gson.fromJson(JS, TxByAddressBean.class);
-        String jsonJS = gson.toJson(txByAddressBean.result);
+        //String jsonJS = gson.toJson(txByAddressBean.result);
         List<TxByAddressBean.ResultBean> resultBeanList = txByAddressBean.getResult();
         System.out.println(resultBeanList);
 
         bufferedReader.close();
+        return JS;
     }
 
-    public void getInterTxByAddress(String ethAddress) throws IOException{
+    public String getInterTxByAddress(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=txlistinternal&address=" +
                 ethAddress + "&startblock=0&endblock=2702578&page=1&offset=10&sort=asc&apikey=" + API_KEY;
 
@@ -110,14 +118,14 @@ public class Etherscan {
 
         gson = new Gson();
         InterTxByAddressBean interTxByAddressBean = gson.fromJson(JS, InterTxByAddressBean.class);
-        String jsonJS = gson.toJson(interTxByAddressBean);
+        //String jsonJS = gson.toJson(interTxByAddressBean);
 //        List<TxByAddressBean.ResultBean> resultBeanList = txByAddressBean.getResult();
-        System.out.println(jsonJS);
 
         bufferedReader.close();
+        return JS;
     }
 
-    public void getTxByHash(String txHash) throws IOException{
+    public String getTxByHash(String txHash) throws IOException{
         String url = "https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=" +
                 txHash + "&apikey=" + API_KEY;
 
@@ -139,6 +147,7 @@ public class Etherscan {
         System.out.println(resultBeanList);
 
         bufferedReader.close();
+        return jsonJS;
     }
 
     public void postMethod(String url, String query) throws IOException {
@@ -167,18 +176,5 @@ public class Etherscan {
         conn.setRequestMethod("GET"); // POST GET PUT DELETE
         conn.setRequestProperty("Accept", "application/json");
         return conn;
-    }
-
-    public static void main(String[] args) {
-        Etherscan etherscan = new Etherscan();
-        try {
-            etherscan.getETHBalance("0x03009a9734175C12631505772833472E98257868");
-            etherscan.getTxByAddress("0x03009a9734175C12631505772833472E98257868");
-            etherscan.getInterTxByAddress("0x03009a9734175C12631505772833472E98257868");
-            etherscan.getMXCBalance("0x9090B94239E1d8117B2D66B4Bea231E04BD89a20");
-
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-        }
     }
 }
