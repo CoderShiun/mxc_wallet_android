@@ -1,4 +1,4 @@
-package com.example.mxc_wallet;
+package com.example.mxc_wallet.bean;
 
 public class MXCBalanceBean {
     public String status;

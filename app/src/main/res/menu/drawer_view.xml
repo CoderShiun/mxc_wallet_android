@@ -13,18 +13,23 @@
             android:title="@string/drawable_MXC_check" />
 
         <item
-            android:id="@+id/menu_tx_check"
+            android:id="@+id/menu_ethtx_check"
             android:icon="@drawable/ic_youtube_searched_for_black_24dp"
-            android:title="@string/drawable_NormalTx_check" />
+            android:title="@string/drawable_ETHTx_check" />
+
+        <item
+            android:id="@+id/menu_mxctx_check"
+            android:icon="@drawable/ic_pageview_black_24dp"
+            android:title="@string/drawable_MXCTx_check" />
 
         <item
             android:id="@+id/menu_tx_check_hash"
             android:icon="@drawable/ic_polymer_black_24dp"
-            android:title="@string/drawable_NormalTx_check_hash" />
+            android:title="@string/drawable_ETHTx_check_hash" />
 
         <item
             android:id="@+id/menu_internaltx_check"
-            android:icon="@drawable/ic_pageview_black_24dp"
+            android:icon="@drawable/ic_error_outline_black_24dp"
             android:title="@string/drawable_InternalTx_check" />
 
         <item

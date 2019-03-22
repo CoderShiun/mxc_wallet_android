@@ -1,4 +1,4 @@
-package com.example.mxc_wallet;
+package com.example.mxc_wallet.bean;
 
 import java.util.List;
 
@@ -7,6 +7,14 @@ public class InterTxByAddressBean {
     public String message;
 
     public List<ResultBean> result;
+
+    public List<ResultBean> getResult() {
+        return result;
+    }
+
+    public void setResult(List<ResultBean> result) {
+        this.result = result;
+    }
 
     public class ResultBean {
     }

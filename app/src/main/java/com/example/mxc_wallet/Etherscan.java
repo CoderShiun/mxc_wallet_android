@@ -1,7 +1,11 @@
 package com.example.mxc_wallet;
 
-import android.os.AsyncTask;
-
+import com.example.mxc_wallet.bean.ETHTxByAddressBean;
+import com.example.mxc_wallet.bean.EthBalanceBean;
+import com.example.mxc_wallet.bean.InterTxByAddressBean;
+import com.example.mxc_wallet.bean.MXCBalanceBean;
+import com.example.mxc_wallet.bean.MXCTxByAddressBean;
+import com.example.mxc_wallet.bean.TxByHashBean;
 import com.google.gson.Gson;
 
 import org.web3j.utils.Convert;
@@ -13,9 +17,8 @@ import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
-
-import io.opencensus.internal.StringUtils;
 
 public class Etherscan {
     private final String API_KEY = "W8M6B92HBM7CUAQINJ8IMST29RY2ZVSQH4";
@@ -23,8 +26,9 @@ public class Etherscan {
     private URL restURL;
     private HttpURLConnection conn;
     private Gson gson;
+    private ArrayList msg;
 
-    public String getETHBalance(String ethAddress) throws IOException {
+    public List getETHBalance(String ethAddress) throws IOException {
         String url = "https://api.etherscan.io/api?module=account&action=balance&address=" +
                 ethAddress + "&tag=latest&apikey=" + API_KEY;
 
@@ -48,7 +52,8 @@ public class Etherscan {
 
         //String jsonJS = gson.toJson(ethBalanceBeanJS.result);
         BigDecimal balance = Convert.fromWei(ethBalanceBeanJS.result, Convert.Unit.ETHER);
-
+        msg = new ArrayList();
+        msg.add(balance);
         //2、
         //解析数组要求使用Type
         /*ArrayList<String> list=gson.fromJson(json2,
@@ -56,10 +61,10 @@ public class Etherscan {
         System.out.println(list);*/
 
         bufferedReader.close();
-        return balance.toString();
+        return msg;
     }
 
-    public String getMXCBalance(String ethAddress) throws IOException{
+    public List getMXCBalance(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=" +
                 MXC_Address + "&address=" +
                 ethAddress + "&tag=latest&apikey=" + API_KEY;
@@ -73,12 +78,14 @@ public class Etherscan {
         gson = new Gson();
         MXCBalanceBean mxcBalanceBean = gson.fromJson(line, MXCBalanceBean.class);
         BigDecimal balance = Convert.fromWei(mxcBalanceBean.result, Convert.Unit.ETHER);
+        msg = new ArrayList();
+        msg.add(balance);
 
         bufferedReader.close();
-        return balance.toString();
+        return msg;
     }
 
-    public String getTxByAddress(String ethAddress) throws IOException{
+    public List getETHTxByAddress(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=txlist&address=" +
                 ethAddress + "&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=" + API_KEY;
 
@@ -93,16 +100,36 @@ public class Etherscan {
         }
 
         gson = new Gson();
-        TxByAddressBean txByAddressBean = gson.fromJson(JS, TxByAddressBean.class);
+        ETHTxByAddressBean ethTxByAddressBean = gson.fromJson(JS, ETHTxByAddressBean.class);
         //String jsonJS = gson.toJson(txByAddressBean.result);
-        List<TxByAddressBean.ResultBean> resultBeanList = txByAddressBean.getResult();
-        System.out.println(resultBeanList);
+        List<ETHTxByAddressBean.ResultBean> resultBeanList = ethTxByAddressBean.getResult();
+        //System.out.println(resultBeanList.size());
 
         bufferedReader.close();
-        return JS;
+        return resultBeanList;
     }
 
-    public String getInterTxByAddress(String ethAddress) throws IOException{
+    public List getMXCTxByAddress(String ethAddress) throws IOException{
+        String url = "https://api-rinkeby.etherscan.io/api?module=account&action=tokentx&contractaddress=" +
+                MXC_Address + "&address=" +
+                ethAddress + "&page=1&offset=1000&sort=asc&apikey=" + API_KEY;
+
+        restURL = new URL(url);
+        conn = getConn(conn);
+
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String line = bufferedReader.readLine();
+
+        gson = new Gson();
+        MXCTxByAddressBean mxcBalanceBean = gson.fromJson(line, MXCTxByAddressBean.class);
+        //String jsonJS = gson.toJson(txByAddressBean.result);
+        List<MXCTxByAddressBean.ResultBean> resultBeanList = mxcBalanceBean.getResult();
+
+        bufferedReader.close();
+        return resultBeanList;
+    }
+
+    public List getInterTxByAddress(String ethAddress) throws IOException{
         String url = "https://api.etherscan.io/api?module=account&action=txlistinternal&address=" +
                 ethAddress + "&startblock=0&endblock=2702578&page=1&offset=10&sort=asc&apikey=" + API_KEY;
 
@@ -119,13 +146,13 @@ public class Etherscan {
         gson = new Gson();
         InterTxByAddressBean interTxByAddressBean = gson.fromJson(JS, InterTxByAddressBean.class);
         //String jsonJS = gson.toJson(interTxByAddressBean);
-//        List<TxByAddressBean.ResultBean> resultBeanList = txByAddressBean.getResult();
+        List<InterTxByAddressBean.ResultBean> resultBeanList = interTxByAddressBean.getResult();
 
         bufferedReader.close();
-        return JS;
+        return resultBeanList;
     }
 
-    public String getTxByHash(String txHash) throws IOException{
+    public List getTxByHash(String txHash) throws IOException{
         String url = "https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=" +
                 txHash + "&apikey=" + API_KEY;
 
@@ -143,11 +170,10 @@ public class Etherscan {
         TxByHashBean txByHashBean = gson.fromJson(JS, TxByHashBean.class);
         String jsonJS = gson.toJson(txByHashBean);
         List<TxByHashBean.ResultBean> resultBeanList = txByHashBean.getResult();
-        System.out.println(jsonJS);
-        System.out.println(resultBeanList);
+
 
         bufferedReader.close();
-        return jsonJS;
+        return resultBeanList;
     }
 
     public void postMethod(String url, String query) throws IOException {

@@ -1,30 +1,31 @@
-package com.example.mxc_wallet;
+package com.example.mxc_wallet.bean;
 
 import java.util.List;
 
-public class TxByAddressBean {
+public class MXCTxByAddressBean {
     public String status;
     public String message;
     public List<ResultBean> result;
 
-    public class ResultBean{
+    public class ResultBean {
         public String blockNumber;
         public String timeStamp;
         public String hash;
         public String nonce;
         public String blockHash;
-        public String transactionIndex;
         public String from;
+        public String contractAddress;
         public String to;
         public String value;
+        public String tokenName;
+        public String tokenSymbol;
+        public String tokenDecimal;
+        public String transactionIndex;
         public String gas;
         public String gasPrice;
-        public String isError;
-        public String txreceipt_status;
-        public String input;
-        public String contractAddress;
-        public String cumulativeGasUsed;
         public String gasUsed;
+        public String cumulativeGasUsed;
+        public String input;
         public String confirmations;
     }
 
@@ -36,7 +37,7 @@ public class TxByAddressBean {
         this.result = result;
     }
 
-    public TxByAddressBean(String status, String message, List<ResultBean> result) {
+    public MXCTxByAddressBean(String status, String message, List<ResultBean> result) {
         this.status = status;
         this.message = message;
         this.result = result;

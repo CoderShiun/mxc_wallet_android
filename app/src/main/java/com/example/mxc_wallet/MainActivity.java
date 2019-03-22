@@ -18,16 +18,28 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mxc_wallet.bean.ETHTxByAddressBean;
+import com.example.mxc_wallet.bean.MXCTxByAddressBean;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,14 +47,19 @@ public class MainActivity extends AppCompatActivity {
 
     boolean logon = false;
     public static final int FUNC_LOGIN = 1;
-    private TextView mMsgView;
     private Toolbar toolbar;
     private String cusName;
     private String cusEth;
+    private List<ETHTxByAddressBean.ResultBean> mETHList;
+    private List<MXCTxByAddressBean.ResultBean> mMXCList;
     private ServiceInBackGround etherAPI = null;
 
+    private TextView mMsgView;
     private View mMainFormView;
     private View mProgressView;
+    private RecyclerView mRecyclerView;
+    private RecyclerView.LayoutManager mRecyclerLayoutManager;
+    private RecyclerView.Adapter mRecyclerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,20 +71,11 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, FUNC_LOGIN);
         }
 
+        initView();
+
         final DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.main_drawer_layout);
         final NavigationView navigationView = (NavigationView) findViewById(R.id.navigation_view);
-        mMsgView = (TextView) findViewById(R.id.msg);
-        mMainFormView = findViewById(R.id.main_container);
-        mProgressView = findViewById(R.id.main_process);
-
         drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        //toolbar.setTitle();
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
         mDrawerToggle = new ActionBarDrawerToggle(
                 this,
                 drawerLayout,
@@ -99,9 +107,14 @@ public class MainActivity extends AppCompatActivity {
                         etherAPI = new ServiceInBackGround("getMXCBalance");
                         etherAPI.execute((Void) null);
                         break;
-                    case R.id.menu_tx_check:
+                    case R.id.menu_ethtx_check:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getTxByAddress");
+                        etherAPI = new ServiceInBackGround("getETHTxByAddress");
+                        etherAPI.execute((Void) null);
+                        break;
+                    case R.id.menu_mxctx_check:
+                        showProgress(true);
+                        etherAPI = new ServiceInBackGround("getMXCTxByAddress");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_tx_check_hash:
@@ -158,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
-
     }
 
     @Override
@@ -173,9 +185,32 @@ public class MainActivity extends AppCompatActivity {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
+    private void initView(){
+        mMsgView = (TextView) findViewById(R.id.msg);
+        mMainFormView = findViewById(R.id.main_container);
+        //Loading process
+        mProgressView = findViewById(R.id.main_process);
 
-    //.constraint.ConstraintLayout
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //toolbar.setTitle();
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
 
+    private void initRecyclerView(){
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        // 设置布局管理器
+        mRecyclerView.setLayoutManager(mRecyclerLayoutManager);
+        // 设置adapter
+        mRecyclerView.setAdapter(mRecyclerAdapter);
+        // 设置Item添加和移除的动画
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        // 设置Item之间间隔样式
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(MainActivity.this, LinearLayoutManager.VERTICAL));
+    }
+
+    //get data from LoginActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -195,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Show loading
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
@@ -228,9 +264,65 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class ServiceInBackGround extends AsyncTask<Void, Void, String> {
+    public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.ViewHolder> {
+
+        private String mToken;
+
+        public MyRecyclerAdapter(String result) {
+            this.mToken = result;
+        }
+
+        public void updateData(String result) {
+            this.mToken = result;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            // 实例化展示的view
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_rv_item, parent, false);
+            // 实例化viewholder
+            ViewHolder viewHolder = new ViewHolder(v);
+            return viewHolder;
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            // 绑定数据
+            if (mToken.equals("ETH")){
+                //holder.mIv.setText(mETHList.get(position).timeStamp);
+                java.util.Date time = new java.util.Date(mETHList.get(position).timeStamp);
+                holder.mIv.setText(time.toString());
+            }else {
+                holder.mIv.setText(mMXCList.get(position).timeStamp);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            if (mToken.equals("ETH")){
+                return mETHList == null ? 0 : mETHList.size();
+            }else {
+                return mMXCList == null ? 0 : mMXCList.size();
+            }
+        }
+
+        public class ViewHolder extends RecyclerView.ViewHolder {
+
+            TextView mIv;
+
+            public ViewHolder(View itemView) {
+                super(itemView);
+                mIv = (TextView) itemView.findViewById(R.id.item_iv);
+            }
+        }
+    }
+
+    private class ServiceInBackGround extends AsyncTask<Void, Void, List> {
         private Etherscan etherscan;
-        private String asyMsg;
+        private List asyMsg;
+        private List<ETHTxByAddressBean.ResultBean> asyMsgETHList;
+        private List<MXCTxByAddressBean.ResultBean> asyMsgMXCList;
         private int asyNo;
         private String etherSwitch;
 
@@ -239,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected List doInBackground(Void... params) {
             etherscan = new Etherscan();
             switch (etherSwitch) {
                 case "getETHBalance":
@@ -260,11 +352,20 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                     break;
-                case "getTxByAddress":
+                case "getETHTxByAddress":
                     try {
-                        asyMsg = etherscan.getTxByAddress(cusEth);
+                        asyMsgETHList = etherscan.getETHTxByAddress(cusEth);
                         asyNo = 2;
-                        return asyMsg;
+                        return asyMsgETHList;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "getMXCTxByAddress":
+                    try {
+                        asyMsgMXCList = etherscan.getMXCTxByAddress(cusEth);
+                        asyNo = 3;
+                        return asyMsgMXCList;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -272,7 +373,7 @@ public class MainActivity extends AppCompatActivity {
                 case "getInterTxByAddress":
                     try {
                         asyMsg = etherscan.getInterTxByAddress(cusEth);
-                        asyNo = 3;
+                        asyNo = 4;
                         return asyMsg;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -283,27 +384,38 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(List s) {
             etherAPI = null;
             switch (asyNo) {
                 case 0:
                     mMsgView.refreshDrawableState();
-                    mMsgView.setText(asyMsg + " ETH");
+                    mMsgView.setText(asyMsg.get(0) + " ETH");
                     showProgress(false);
                     break;
                 case 1:
                     mMsgView.refreshDrawableState();
-                    mMsgView.setText(asyMsg + " MXC");
+                    mMsgView.setText(asyMsg.get(0) + " MXC");
                     showProgress(false);
                     break;
                 case 2:
                     mMsgView.refreshDrawableState();
-                    mMsgView.setText(asyMsg);
+                    mRecyclerLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
+                    mETHList = asyMsgETHList;
+                    mRecyclerAdapter = new MyRecyclerAdapter("ETH");
+                    initRecyclerView();
                     showProgress(false);
                     break;
                 case 3:
                     mMsgView.refreshDrawableState();
-                    mMsgView.setText(asyMsg);
+                    mRecyclerLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
+                    mMXCList = asyMsgMXCList;
+                    mRecyclerAdapter = new MyRecyclerAdapter("MXC");
+                    initRecyclerView();
+                    showProgress(false);
+                    break;
+                case 4:
+                    mMsgView.refreshDrawableState();
+                    //mMsgView.setText(asyMsg);
                     showProgress(false);
                     break;
             }
