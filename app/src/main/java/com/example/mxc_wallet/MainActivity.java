@@ -331,20 +331,26 @@ public class MainActivity extends AppCompatActivity {
                 case 0:
                     mMsgView.refreshDrawableState();
                     mMsgView.setText(asyMsg.get(0) + " ETH");
+                    initData("");
+                    initRecyclerView();
                     showProgress(false);
                     break;
                 case 1:
                     mMsgView.refreshDrawableState();
                     mMsgView.setText(asyMsg.get(0) + " MXC");
+                    initData("");
+                    initRecyclerView();
                     showProgress(false);
                     break;
                 case 2:
+                    mMsgView.setText("");
                     mETHList = asyMsgETHList;
                     initData("ETH");
                     initRecyclerView();
                     showProgress(false);
                     break;
                 case 3:
+                    mMsgView.setText("");
                     mMXCList = asyMsgMXCList;
                     initData("MXC");
                     initRecyclerView();

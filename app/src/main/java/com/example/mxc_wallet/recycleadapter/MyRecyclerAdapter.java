@@ -66,13 +66,12 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
             String timeStamp = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT)
                     .format(new Date(longTimeStamp * 1000));
             holder.mIv.setText(timeStamp);
-        } else {
+        } else if (mToken.equals("MXC")){
             long longTimeStamp = Long.parseLong(mMXCList.get((mETHList.size()-1) - position).timeStamp);
             String timeStamp = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT)
                     .format(new Date(longTimeStamp * 1000));
             holder.mIv.setText(timeStamp);
         }
-
         // Click
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
