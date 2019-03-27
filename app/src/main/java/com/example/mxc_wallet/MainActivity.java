@@ -1,16 +1,20 @@
 package com.example.mxc_wallet;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -22,7 +26,10 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.SparseArray;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,6 +37,10 @@ import android.widget.Toast;
 import com.example.mxc_wallet.bean.ETHTxByAddressBean;
 import com.example.mxc_wallet.bean.MXCTxByAddressBean;
 import com.example.mxc_wallet.recycleadapter.MyRecyclerAdapter;
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,9 +61,14 @@ public class MainActivity extends AppCompatActivity {
     private TextView mMsgView;
     private View mMainFormView;
     private View mProgressView;
+
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mRecyclerLayoutManager;
     private RecyclerView.Adapter mRecyclerAdapter;
+
+    private SurfaceView surfaceView;
+    private CameraSource cameraSource;
+    BarcodeDetector barcodeDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +125,68 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.menu_mxctx_check:
                         showProgress(true);
                         etherAPI = new ServiceInBackGround("getMXCTxByAddress");
+                        etherAPI.execute((Void) null);
+                        break;
+                    case R.id.menu_eth_tx:
+                        //showProgress(true);
+
+                        surfaceView=(SurfaceView)findViewById(R.id.surfaceView);
+                        barcodeDetector = new BarcodeDetector.Builder(MainActivity.this)
+                                .setBarcodeFormats(Barcode.QR_CODE).build();
+                        cameraSource=new CameraSource.Builder(MainActivity.this, barcodeDetector)
+                                .setRequestedPreviewSize(1920,1080)
+                                .setAutoFocusEnabled(true)
+                                .build();
+
+                        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback(){
+                            @Override
+                            public void surfaceCreated(SurfaceHolder holder) {
+                                if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
+                                        != PackageManager.PERMISSION_GRANTED)
+                                    return;
+                                try{
+                                    cameraSource.start(surfaceView.getHolder());
+                                }catch (IOException e){
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            @Override
+                            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+                            }
+
+                            @Override
+                            public void surfaceDestroyed(SurfaceHolder holder) {
+                                cameraSource.stop();
+                            }
+                        });
+                        barcodeDetector.setProcessor(new Detector.Processor<Barcode>(){
+
+                            @Override
+                            public void release() {
+
+                            }
+
+                            @Override
+                            public void receiveDetections(Detector.Detections<Barcode> detections) {
+                                final SparseArray<Barcode> qrCodes=detections.getDetectedItems();
+                                if(qrCodes.size()!=0){
+                                    mMsgView.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mMsgView.setText(qrCodes.valueAt(0).displayValue);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
+                        etherAPI.execute((Void) null);
+                        break;
+                    case R.id.menu_mxc_tx:
+                        showProgress(true);
+                        //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_tx_check_hash:

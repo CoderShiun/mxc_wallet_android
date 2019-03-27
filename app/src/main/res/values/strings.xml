@@ -33,6 +33,8 @@
     <string name="drawable_MXC_check">My MXC balance</string>
     <string name="drawable_ETHTx_check">Check ETH transaction</string>
     <string name="drawable_MXCTx_check">Check MXC transaction</string>
+    <string name="drawable_ETH_Tx">Send ETH</string>
+    <string name="drawable_MXC_Tx">Send MXD</string>
     <string name="drawable_ETHTx_check_hash">Check transaction by hash</string>
     <string name="drawable_InternalTx_check">Check internal transaction</string>
     <string name="drawable_setting">Setting</string>

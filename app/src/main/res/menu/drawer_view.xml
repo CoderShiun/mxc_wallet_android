@@ -23,6 +23,16 @@
             android:title="@string/drawable_MXCTx_check" />
 
         <item
+            android:id="@+id/menu_eth_tx"
+            android:icon="@drawable/ic_autorenew_black_24dp"
+            android:title="@string/drawable_ETH_Tx" />
+
+        <item
+            android:id="@+id/menu_mxc_tx"
+            android:icon="@drawable/ic_cached_black_24dp"
+            android:title="@string/drawable_MXC_Tx" />
+
+        <item
             android:id="@+id/menu_tx_check_hash"
             android:icon="@drawable/ic_polymer_black_24dp"
             android:title="@string/drawable_ETHTx_check_hash" />
