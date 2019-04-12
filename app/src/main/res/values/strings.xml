@@ -38,4 +38,14 @@
     <string name="drawable_ETHTx_check_hash">Check transaction by hash</string>
     <string name="drawable_InternalTx_check">Check internal transaction</string>
     <string name="drawable_setting">Setting</string>
+
+    <string name="scanbarcode_btn">Maybe Next Time!</string>
+    <string name="scanbarcode_text">MXC QRCode Scanner</string>
+
+
+    <string name="dialog_EthTx_msg">Please fill the info below.</string>
+    <string name="dialog_EthTx_to">Send to</string>
+    <string name="dialog_EthTx_amount">Amount</string>
+    <string name="dialog_EthTx_ok">OK</string>
+    <string name="dialog_EthTx_cancel">Cancel</string>
 </resources>

@@ -1,13 +1,16 @@
 package com.example.mxc_wallet;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,6 +43,13 @@ public class ScanBarcodeActivity extends AppCompatActivity {
         txtBarcodeValue = findViewById(R.id.txtBarcodeValue);
         surfaceView = findViewById(R.id.surfaceView);
         btnAction = findViewById(R.id.btnAction);
+
+        btnAction.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ScanBarcodeActivity.this.finish();
+            }
+        });
     }
 
     private void initialiseDetectorsAndSources(){
@@ -80,7 +90,8 @@ public class ScanBarcodeActivity extends AppCompatActivity {
         barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
             @Override
             public void release() {
-                Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_LONG).show();
+//                Toast.makeText(getApplicationContext(), "To prevent memory leaks barcode scanner has been stopped", Toast.LENGTH_LONG).show();
+                ScanBarcodeActivity.this.finish();
             }
 
             @Override
@@ -88,19 +99,16 @@ public class ScanBarcodeActivity extends AppCompatActivity {
                 final SparseArray<Barcode> barcodes = detections.getDetectedItems();
                 if (barcodes.size() != 0) {
                     txtBarcodeValue.post(new Runnable() {
-
                         @Override
                         public void run() {
                             if (barcodes.valueAt(0).displayValue != null) {
                                 txtBarcodeValue.removeCallbacks(null);
-                                intentData = barcodes.valueAt(0).email.address;
-                                txtBarcodeValue.setText(intentData);
-                                btnAction.setText("ADD CONTENT TO THE MAIL");
-                            } else {
-                                btnAction.setText("LAUNCH URL");
                                 intentData = barcodes.valueAt(0).displayValue;
-                                txtBarcodeValue.setText(intentData);
-
+                                //txtBarcodeValue.setText(intentData);
+                                Intent intent = new Intent();//数据是使用Intent返回
+                                intent.putExtra("PRIVATE_KEY", intentData);//把返回数据存入Intent
+                                ScanBarcodeActivity.this.setResult(RESULT_OK, intent);
+                                release();
                             }
                         }
                     });

@@ -10,6 +10,8 @@ package wallet;
 service Auth{
     rpc Register(RegisterRequest) returns (RegisterReply){}
     rpc Login(LoginRequest) returns (LoginReply){}
+    rpc TxETH(TxEthRequest) returns (TxEthReply){}
+    rpc TxMXC(TxMxcRequest) returns (TxMxcReply){}
 }
 
 message RegisterRequest {
@@ -32,4 +34,38 @@ message LoginRequest {
 message LoginReply {
     string reply = 1;
     string message = 2;
+}
+
+message TxRequest {
+    string privateKey = 1;
+    string from = 2;
+    string to = 3;
+    string amount = 4;
+}
+
+message TxReply {
+    string txHash = 1;
+    string error = 2;
+}
+
+message TxEthRequest {
+    string privateKey = 1;
+    string from = 2;
+    string to = 3;
+    string amount = 4;
+}
+
+message TxEthReply {
+    string txHash = 1;
+}
+
+message TxMxcRequest {
+    string privateKey = 1;
+    string from = 2;
+    string to = 3;
+    string amount = 4;
+}
+
+message TxMxcReply {
+    string txHash = 1;
 }

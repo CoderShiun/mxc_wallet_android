@@ -27,10 +27,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.SparseArray;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,24 +53,30 @@ public class MainActivity extends AppCompatActivity {
 
     boolean logon = false;
     public static final int FUNC_LOGIN = 1;
+    public static final int FUNC_BARCODE = 2;
     private Toolbar toolbar;
     private String cusName;
     private String cusEth;
+    private String sendTo;
+    private String amount;
     public static List<ETHTxByAddressBean.ResultBean> mETHList;
     public static List<MXCTxByAddressBean.ResultBean> mMXCList;
-    private ServiceInBackGround etherAPI = null;
+    private EtherscanTask etherAPI = null;
 
     private TextView mMsgView;
     private View mMainFormView;
     private View mProgressView;
 
+    //for tx dialog
+    LayoutInflater mDialogFactory;
+    private View mDialogEntryView;
+    private EditText mDialogEdit_to;
+    private EditText mDialogEdit_amount;
+
+
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mRecyclerLayoutManager;
     private RecyclerView.Adapter mRecyclerAdapter;
-
-    private SurfaceView surfaceView;
-    private CameraSource cameraSource;
-    BarcodeDetector barcodeDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,85 +117,65 @@ public class MainActivity extends AppCompatActivity {
                 switch (item.getItemId()) {
                     case R.id.menu_eth:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getETHBalance");
+                        etherAPI = new EtherscanTask("getETHBalance");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_mxc:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getMXCBalance");
+                        etherAPI = new EtherscanTask("getMXCBalance");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_ethtx_check:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getETHTxByAddress");
+                        etherAPI = new EtherscanTask("getETHTxByAddress");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_mxctx_check:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getMXCTxByAddress");
+                        etherAPI = new EtherscanTask("getMXCTxByAddress");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_eth_tx:
-                        //showProgress(true);
+                        mDialogFactory = LayoutInflater.from(MainActivity.this);
+                        mDialogEntryView = mDialogFactory.inflate(R.layout.dialog_tx, null);
+                        mDialogEdit_to = mDialogEntryView.findViewById(R.id.editTextTo);
+                        mDialogEdit_amount = mDialogEntryView.findViewById(R.id.editTextAmount);
+                        AlertDialog.Builder editDialog = new AlertDialog.Builder(MainActivity.this);
+                        editDialog.setTitle(getString(R.string.dialog_EthTx_msg));
+                        editDialog.setIcon(R.drawable.ic_attach_money_black_24dp);
 
-                        surfaceView=(SurfaceView)findViewById(R.id.surfaceView);
-                        barcodeDetector = new BarcodeDetector.Builder(MainActivity.this)
-                                .setBarcodeFormats(Barcode.QR_CODE).build();
-                        cameraSource=new CameraSource.Builder(MainActivity.this, barcodeDetector)
-                                .setRequestedPreviewSize(1920,1080)
-                                .setAutoFocusEnabled(true)
-                                .build();
+                        editDialog.setView(mDialogEntryView);
 
-                        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback(){
-                            @Override
-                            public void surfaceCreated(SurfaceHolder holder) {
-                                if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
-                                        != PackageManager.PERMISSION_GRANTED)
-                                    return;
-                                try{
-                                    cameraSource.start(surfaceView.getHolder());
-                                }catch (IOException e){
-                                    e.printStackTrace();
-                                }
-                            }
+                        editDialog.setPositiveButton(getString(R.string.dialog_EthTx_ok)
+                                , new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sendTo = mDialogEdit_to.getText().toString();
+                                        amount = mDialogEdit_amount.getText().toString();
 
-                            @Override
-                            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                                        Intent ethIntent = new Intent(MainActivity.this, ScanBarcodeActivity.class);
+                                        startActivityForResult(ethIntent, FUNC_BARCODE);
+                                        //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
+//                                      etherAPI.execute((Void) null);
+                                        dialog.dismiss();
+                                    }
+                                });
 
-                            }
+                        editDialog.setNegativeButton(getString(R.string.dialog_EthTx_cancel)
+                                , new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
 
-                            @Override
-                            public void surfaceDestroyed(SurfaceHolder holder) {
-                                cameraSource.stop();
-                            }
-                        });
-                        barcodeDetector.setProcessor(new Detector.Processor<Barcode>(){
-
-                            @Override
-                            public void release() {
-
-                            }
-
-                            @Override
-                            public void receiveDetections(Detector.Detections<Barcode> detections) {
-                                final SparseArray<Barcode> qrCodes=detections.getDetectedItems();
-                                if(qrCodes.size()!=0){
-                                    mMsgView.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mMsgView.setText(qrCodes.valueAt(0).displayValue);
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                        //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
-                        etherAPI.execute((Void) null);
+                        editDialog.create().show();
                         break;
                     case R.id.menu_mxc_tx:
-                        showProgress(true);
+                        Intent mxcIntent = new Intent(MainActivity.this, ScanBarcodeActivity.class);
+                        startActivityForResult(mxcIntent, FUNC_BARCODE);
                         //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
-                        etherAPI.execute((Void) null);
+//                        etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_tx_check_hash:
                         new AlertDialog.Builder(MainActivity.this)
@@ -202,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case R.id.menu_internaltx_check:
                         showProgress(true);
-                        etherAPI = new ServiceInBackGround("getInterTxByAddress");
+                        etherAPI = new EtherscanTask("getInterTxByAddress");
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_settings:
@@ -283,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this, LinearLayoutManager.VERTICAL));
     }
 
-    //get data from LoginActivity
+    //get data from Other Activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -297,6 +285,15 @@ public class MainActivity extends AppCompatActivity {
                 mMsgView.setText("Hello " + cusName + " welcome to the MXC wallet!");
                 //Log.d("User name is: ", name);
                 toolbar.setTitle(name);
+            } else {
+                finish();
+            }
+        }
+
+        if (requestCode == FUNC_BARCODE) {
+            if (resultCode == RESULT_OK) {
+                String priKey = data.getStringExtra("PRIVATE_KEY");
+                mMsgView.setText(priKey);
             } else {
                 finish();
             }
@@ -337,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class ServiceInBackGround extends AsyncTask<Void, Void, List> {
+    private class EtherscanTask extends AsyncTask<Void, Void, List> {
         private Etherscan etherscan;
         private List asyMsg;
         private List<ETHTxByAddressBean.ResultBean> asyMsgETHList;
@@ -345,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
         private int asyNo;
         private String etherSwitch;
 
-        public ServiceInBackGround(String etherSwitch) {
+        public EtherscanTask(String etherSwitch) {
             this.etherSwitch = etherSwitch;
         }
 
@@ -447,13 +444,13 @@ public class MainActivity extends AppCompatActivity {
             showProgress(false);
         }
 
-        private void initData(String token){
+        private void initData(String token) {
             mRecyclerLayoutManager = new LinearLayoutManager(
                     MainActivity.this, LinearLayoutManager.VERTICAL,
                     false);
             mRecyclerAdapter = new MyRecyclerAdapter(token);
 
-            ((MyRecyclerAdapter) mRecyclerAdapter).setOnItemClickListener(new MyRecyclerAdapter.OnItemClickListener(){
+            ((MyRecyclerAdapter) mRecyclerAdapter).setOnItemClickListener(new MyRecyclerAdapter.OnItemClickListener() {
                 @Override
                 public void onItemClick(View view, int position) {
                     new AlertDialog.Builder(MainActivity.this)
@@ -468,6 +465,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }).show();
                 }
+
                 @Override
                 public void onItemLongClick(View view, int position) {
                     //Toast.makeText(MainActivity.this,"long click " + position + " item", Toast.LENGTH_SHORT).show();
