@@ -36,6 +36,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mxc_wallet.backgroundTasks.EtherscanTasks;
 import com.example.mxc_wallet.bean.ETHTxByAddressBean;
 import com.example.mxc_wallet.bean.MXCTxByAddressBean;
 import com.example.mxc_wallet.recycleadapter.MyRecyclerAdapter;
@@ -46,6 +47,14 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.io.IOException;
 import java.util.List;
+
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.wxample.mxcwallet.AuthGrpc;
+import io.grpc.wxample.mxcwallet.TxEthReply;
+import io.grpc.wxample.mxcwallet.TxEthRequest;
+import io.grpc.wxample.mxcwallet.TxMxcReply;
+import io.grpc.wxample.mxcwallet.TxMxcRequest;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,6 +71,9 @@ public class MainActivity extends AppCompatActivity {
     public static List<ETHTxByAddressBean.ResultBean> mETHList;
     public static List<MXCTxByAddressBean.ResultBean> mMXCList;
     private EtherscanTask etherAPI = null;
+    private TxTask txTask;
+//    EtherscanTasks etherscanTasks;
+//    EtherscanTasks.EtherscanTask etherscanTask;
 
     private TextView mMsgView;
     private View mMainFormView;
@@ -116,6 +128,11 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.menu_eth:
+//                        etherscanTasks = new EtherscanTasks();
+//                        etherscanTasks.showProgress(true);
+//                        showProgress(true);
+//                        etherscanTask = etherscanTasks.new EtherscanTask("getETHBalance");
+//                        etherscanTask.execute((Void) null);
                         showProgress(true);
                         etherAPI = new EtherscanTask("getETHBalance");
                         etherAPI.execute((Void) null);
@@ -273,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
     //get data from Other Activity
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FUNC_LOGIN) {
             if (resultCode == RESULT_OK) {
@@ -293,7 +310,8 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == FUNC_BARCODE) {
             if (resultCode == RESULT_OK) {
                 String priKey = data.getStringExtra("PRIVATE_KEY");
-                mMsgView.setText(priKey);
+                txTask = new TxTask();
+                txTask.execute(priKey, sendTo, amount);
             } else {
                 finish();
             }
@@ -471,6 +489,54 @@ public class MainActivity extends AppCompatActivity {
                     //Toast.makeText(MainActivity.this,"long click " + position + " item", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    private class TxTask extends AsyncTask<String, Void, List>{
+        private ManagedChannel mChannel;
+
+        @Override
+        protected List doInBackground(String... strings) {
+            mChannel = ManagedChannelBuilder.forAddress("45.76.94.136", 8089).usePlaintext(true).build();
+            AuthGrpc.AuthBlockingStub blockingStub = AuthGrpc.newBlockingStub(mChannel);
+
+            switch (strings[0]){
+                case "ETH":
+                    TxEthRequest txEthRequest = TxEthRequest.newBuilder()
+                            .setPrivateKey(strings[1])
+                            .setFrom(cusEth)
+                            .setTo(strings[2])
+                            .setAmount(strings[3])
+                            .build();
+                    try {
+                        TxEthReply txEthReply = blockingStub.txETH(txEthRequest);
+                    } catch (Exception e){
+
+                    }
+                case "MXC":
+                    TxMxcRequest txMxcRequest = TxMxcRequest.newBuilder()
+                            .setPrivateKey(strings[1])
+                            .setFrom(cusEth)
+                            .setTo(strings[2])
+                            .setAmount(strings[3])
+                            .build();
+                    try {
+                        TxMxcReply txMxcReply = blockingStub.txMXC(txMxcRequest);
+                    } catch (Exception e){
+
+                    }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(List list) {
+            super.onPostExecute(list);
+        }
+
+        @Override
+        protected void onCancelled() {
+            showProgress(false);
         }
     }
 }

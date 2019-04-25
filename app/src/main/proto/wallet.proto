@@ -56,7 +56,9 @@ message TxEthRequest {
 }
 
 message TxEthReply {
-    string txHash = 1;
+    string reply = 1;
+    string txHash = 2;
+    string err = 3;
 }
 
 message TxMxcRequest {
@@ -67,5 +69,7 @@ message TxMxcRequest {
 }
 
 message TxMxcReply {
-    string txHash = 1;
+    string reply = 1;
+    string txHash = 2;
+    string err = 3;
 }
