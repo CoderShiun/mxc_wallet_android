@@ -364,6 +364,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         @Override
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
+            //45.76.94.136
             mChannel = ManagedChannelBuilder.forAddress("45.76.94.136", 8089).usePlaintext(true).build();
             AuthGrpc.AuthBlockingStub blockingStub = AuthGrpc.newBlockingStub(mChannel);
 //            AuthGrpc.AuthStub asyncStub = AuthGrpc.newStub(mChannel);

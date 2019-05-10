@@ -36,18 +36,6 @@ message LoginReply {
     string message = 2;
 }
 
-message TxRequest {
-    string privateKey = 1;
-    string from = 2;
-    string to = 3;
-    string amount = 4;
-}
-
-message TxReply {
-    string txHash = 1;
-    string error = 2;
-}
-
 message TxEthRequest {
     string privateKey = 1;
     string from = 2;

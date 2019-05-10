@@ -62,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
 
     boolean logon = false;
     public static final int FUNC_LOGIN = 1;
-    public static final int FUNC_BARCODE = 2;
+    public static final int FUNC_BARCODE_ETH = 2;
+    public static final int FUNC_BARCODE_MXC = 3;
     private Toolbar toolbar;
     private String cusName;
     private String cusEth;
@@ -72,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     public static List<MXCTxByAddressBean.ResultBean> mMXCList;
     private EtherscanTask etherAPI = null;
     private TxTask txTask;
+    private AlertDialog.Builder editDialog;
 //    EtherscanTasks etherscanTasks;
 //    EtherscanTasks.EtherscanTask etherscanTask;
 
@@ -153,11 +155,12 @@ public class MainActivity extends AppCompatActivity {
                         etherAPI.execute((Void) null);
                         break;
                     case R.id.menu_eth_tx:
+                        showProgress(true);
                         mDialogFactory = LayoutInflater.from(MainActivity.this);
                         mDialogEntryView = mDialogFactory.inflate(R.layout.dialog_tx, null);
                         mDialogEdit_to = mDialogEntryView.findViewById(R.id.editTextTo);
                         mDialogEdit_amount = mDialogEntryView.findViewById(R.id.editTextAmount);
-                        AlertDialog.Builder editDialog = new AlertDialog.Builder(MainActivity.this);
+                        editDialog = new AlertDialog.Builder(MainActivity.this);
                         editDialog.setTitle(getString(R.string.dialog_EthTx_msg));
                         editDialog.setIcon(R.drawable.ic_attach_money_black_24dp);
 
@@ -171,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                                         amount = mDialogEdit_amount.getText().toString();
 
                                         Intent ethIntent = new Intent(MainActivity.this, ScanBarcodeActivity.class);
-                                        startActivityForResult(ethIntent, FUNC_BARCODE);
+                                        startActivityForResult(ethIntent, FUNC_BARCODE_ETH);
                                         //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
 //                                      etherAPI.execute((Void) null);
                                         dialog.dismiss();
@@ -189,10 +192,38 @@ public class MainActivity extends AppCompatActivity {
                         editDialog.create().show();
                         break;
                     case R.id.menu_mxc_tx:
-                        Intent mxcIntent = new Intent(MainActivity.this, ScanBarcodeActivity.class);
-                        startActivityForResult(mxcIntent, FUNC_BARCODE);
-                        //etherAPI = new ServiceInBackGround("getMXCTxByAddress");
-//                        etherAPI.execute((Void) null);
+                        mDialogFactory = LayoutInflater.from(MainActivity.this);
+                        mDialogEntryView = mDialogFactory.inflate(R.layout.dialog_tx, null);
+                        mDialogEdit_to = mDialogEntryView.findViewById(R.id.editTextTo);
+                        mDialogEdit_amount = mDialogEntryView.findViewById(R.id.editTextAmount);
+                        editDialog = new AlertDialog.Builder(MainActivity.this);
+                        editDialog.setTitle(getString(R.string.dialog_EthTx_msg));
+                        editDialog.setIcon(R.drawable.ic_attach_money_black_24dp);
+
+                        editDialog.setView(mDialogEntryView);
+
+                        editDialog.setPositiveButton(getString(R.string.dialog_EthTx_ok)
+                                , new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sendTo = mDialogEdit_to.getText().toString();
+                                        amount = mDialogEdit_amount.getText().toString();
+
+                                        Intent ethIntent = new Intent(MainActivity.this, ScanBarcodeActivity.class);
+                                        startActivityForResult(ethIntent, FUNC_BARCODE_MXC);
+                                        dialog.dismiss();
+                                    }
+                                });
+
+                        editDialog.setNegativeButton(getString(R.string.dialog_EthTx_cancel)
+                                , new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+
+                        editDialog.create().show();
                         break;
                     case R.id.menu_tx_check_hash:
                         new AlertDialog.Builder(MainActivity.this)
@@ -307,11 +338,21 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        if (requestCode == FUNC_BARCODE) {
+        if (requestCode == FUNC_BARCODE_ETH) {
             if (resultCode == RESULT_OK) {
                 String priKey = data.getStringExtra("PRIVATE_KEY");
                 txTask = new TxTask();
-                txTask.execute(priKey, sendTo, amount);
+                txTask.execute("ETH", priKey, sendTo, amount);
+            } else {
+                finish();
+            }
+        }
+
+        if (requestCode == FUNC_BARCODE_MXC) {
+            if (resultCode == RESULT_OK) {
+                String priKey = data.getStringExtra("PRIVATE_KEY");
+                txTask = new TxTask();
+                txTask.execute("MXC", priKey, sendTo, amount);
             } else {
                 finish();
             }
@@ -492,11 +533,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class TxTask extends AsyncTask<String, Void, List>{
+    private class TxTask extends AsyncTask<String, Void, String>{
         private ManagedChannel mChannel;
+        private boolean errFlag = true;
 
         @Override
-        protected List doInBackground(String... strings) {
+        protected String doInBackground(String... strings) {
+            //10.0.2.2 / 45.76.94.136
             mChannel = ManagedChannelBuilder.forAddress("45.76.94.136", 8089).usePlaintext(true).build();
             AuthGrpc.AuthBlockingStub blockingStub = AuthGrpc.newBlockingStub(mChannel);
 
@@ -510,9 +553,18 @@ public class MainActivity extends AppCompatActivity {
                             .build();
                     try {
                         TxEthReply txEthReply = blockingStub.txETH(txEthRequest);
+                        if (txEthReply.getReply().equals("0")){
+                            errFlag = false;
+                            return txEthReply.getTxHash();
+                        } else {
+                            errFlag = true;
+                            return txEthReply.getErr();
+                        }
                     } catch (Exception e){
-
+                        e.printStackTrace();
                     }
+                    break;
+
                 case "MXC":
                     TxMxcRequest txMxcRequest = TxMxcRequest.newBuilder()
                             .setPrivateKey(strings[1])
@@ -522,16 +574,33 @@ public class MainActivity extends AppCompatActivity {
                             .build();
                     try {
                         TxMxcReply txMxcReply = blockingStub.txMXC(txMxcRequest);
+                        if (txMxcReply.getReply().equals("0")){
+                            errFlag = false;
+                            return txMxcReply.getTxHash();
+                        } else {
+                            errFlag = true;
+                            return txMxcReply.getErr();
+                        }
                     } catch (Exception e){
-
+                        //e.printStackTrace();
+                        return e.toString();
                     }
+
             }
             return null;
         }
 
         @Override
-        protected void onPostExecute(List list) {
-            super.onPostExecute(list);
+        protected void onPostExecute(String s) {
+            if (errFlag == false){
+                mMsgView.refreshDrawableState();
+                mMsgView.setText("Your transaction hash is: \n" + s);
+                showProgress(false);
+            } else {
+                mMsgView.refreshDrawableState();
+                mMsgView.setText("Error: \n" + s);
+                showProgress(false);
+            }
         }
 
         @Override
